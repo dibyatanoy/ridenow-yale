@@ -93,9 +93,7 @@ function geoCode(place){
         } else if (response.body.error) {
             console.log('Error: ', response.body.error)
         }else{
-            //console.log('lat: %f, long: %f', body.geometry.location.lat, body.results.geometry.location.long)
-            console.log(body)
-            console.log(response.body)
+            console.log('lat: %f, long: %f', body.results[0].geometry.location.lat, body.results[0].geometry.location.long)
         }
     })
 }
