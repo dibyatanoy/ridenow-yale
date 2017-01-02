@@ -94,7 +94,8 @@ function geoCode(place){
             console.log('Error: ', response.body.error)
         }else{
             //console.log('lat: %f, long: %f', body.geometry.location.lat, body.results.geometry.location.long)
-            console.log(body.results)
+            console.log(body)
+            console.log(response.body)
         }
     })
 }
