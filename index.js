@@ -37,6 +37,7 @@ app.post('/webhook/', function (req, res) {
         if (event.message && event.message.text) {
             let text = event.message.text
             //sendTextMessage(sender, "Text received, echo: " + text.substring(0, 200))
+            console.log("text received")
             geoCode(text + ", New Haven, CT")
         }else if (event.message && event.message.attachments){
 
