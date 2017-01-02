@@ -39,6 +39,7 @@ app.post('/webhook/', function (req, res) {
             //sendTextMessage(sender, "Text received, echo: " + text.substring(0, 200))
             console.log("text received")
             geoCode(text + ", New Haven, CT")
+            getRoutes('yale')
         }else if (event.message && event.message.attachments){
 
             if(event.message.attachments[0].payload.coordinates){
@@ -93,8 +94,33 @@ function geoCode(place){
         } else if (response.body.error) {
             console.log('Error: ', response.body.error)
         }else{
-            console.log('lat: %f, long: %f', JSON.parse(body).results[0].geometry.location.lat, JSON.parse(body).results[0].geometry.location.long)
+            console.log('lat: %f, long: %f', JSON.parse(body).results[0].geometry.location.lat, JSON.parse(body).results[0].geometry.location.lng)
             //console.log(body)
+            //console.log(response.body)
+        }
+    })
+}
+
+function getRoutes(agency){
+
+    request({
+        headers:{
+            'X-Mashape-Key': translocKey,
+            'Accept': 'application/json',
+        },
+        url: 'https://transloc-api-1-2.p.mashape.com/routes.json',
+        qs: {
+            agencies: agency,
+        },
+        method: 'GET'
+    }, function(error, response, body){
+        if (error) {
+            console.log('Error sending messages: ', error)
+        } else if (response.body.error) {
+            console.log('Error: ', response.body.error)
+        }else{
+            //console.log('lat: %f, long: %f', JSON.parse(body).results[0].geometry.location.lat, JSON.parse(body).results[0].geometry.location.lng)
+            console.log(body)
             //console.log(response.body)
         }
     })
