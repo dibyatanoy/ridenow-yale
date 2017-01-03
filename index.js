@@ -411,7 +411,7 @@ function cacheStopDistancesAndContinue(routes, src, dest){
 
             var srcWalkTimes = body.time
             for (var i = 0; i < numStops; i++){
-                stopDistancesSrc[stopDescs.stop_id] = srcWalkTimes[i+1]
+                stopDistancesSrc[stopDescs[i].stop_id] = srcWalkTimes[i+1]
             }
 
             console.log('completed caching source to stop distances')
@@ -435,7 +435,7 @@ function cacheStopDistancesAndContinue(routes, src, dest){
 
                     var destWalkTimes = body.time
                     for (var i = 0; i < numStops; i++){
-                        stopDistancesDest[stopDescs.stop_id] = destWalkTimes[i+1]
+                        stopDistancesDest[stopDescs[i].stop_id] = destWalkTimes[i+1]
                     }
                     console.log('completed caching destination to stop distances')
                     getClosestStopsAllRoutes(routes, src, dest)
