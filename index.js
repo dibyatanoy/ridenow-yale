@@ -205,7 +205,7 @@ function getBestStops(route, src, dest, mcb){
 
     var asyncTasksStops = []
 
-    var routeId = route.routeId
+    var routeId = route.route_id
     var stops = route.stops
     walkDistances[routeId] = []
 
@@ -415,6 +415,7 @@ function cacheStopDistancesAndContinue(routes, src, dest){
             }
 
             console.log('completed caching source to stop distances')
+            console.log(stopDistancesSrc)
 
             request({
                 url: 'http://www.mapquestapi.com/directions/v2/routematrix',
