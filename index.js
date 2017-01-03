@@ -150,7 +150,7 @@ function calcWalkDistanceToStop(routeid, stopid, src, dest, mcb){
                 url: 'https://maps.googleapis.com/maps/api/distancematrix/json',
                 qs:{
                     origins: src.lat.toString() + ',' + src.lng.toString(),
-                    destinations: stopLoc.lat.toString() + ',' + stopLoc.lat.toString(),
+                    destinations: stopLoc.lat.toString() + ',' + stopLoc.lng.toString(),
                     key: gmapToken,
                     mode: 'walking',
                 },
@@ -169,7 +169,7 @@ function calcWalkDistanceToStop(routeid, stopid, src, dest, mcb){
                         url: 'https://maps.googleapis.com/maps/api/distancematrix/json',
                         qs:{
                             destinations: dest.lat.toString() + ',' + dest.lng.toString(),
-                            origins: stopLoc.lat.toString() + ',' + stopLoc.lat.toString(),
+                            origins: stopLoc.lat.toString() + ',' + stopLoc.lng.toString(),
                             key: gmapToken,
                             mode: 'walking',
                         },
