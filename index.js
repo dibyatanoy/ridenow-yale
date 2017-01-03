@@ -147,7 +147,7 @@ function calcWalkDistanceToStop(routeid, stopid, src, dest, mcb){
             var stopLoc = stopDesc.location
 
             request({
-                url: 'http://maps.googleapis.com/maps/api/distancematrix/json',
+                url: 'https://maps.googleapis.com/maps/api/distancematrix/json',
                 qs:{
                     origins: src.lat.toString() + ',' + src.lng.toString(),
                     destinations: stopLoc.lat.toString() + ',' + stopLoc.lat.toString(),
@@ -166,7 +166,7 @@ function calcWalkDistanceToStop(routeid, stopid, src, dest, mcb){
                     //walkDistances[routeid].push({stopid: stopid, walkTime: walkTimeSrc})
 
                     request({
-                        url: 'http://maps.googleapis.com/maps/api/distancematrix/json',
+                        url: 'https://maps.googleapis.com/maps/api/distancematrix/json',
                         qs:{
                             destinations: dest.lat.toString() + ',' + dest.lng.toString(),
                             origins: stopLoc.lat.toString() + ',' + stopLoc.lat.toString(),
