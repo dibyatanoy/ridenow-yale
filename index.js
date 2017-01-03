@@ -162,6 +162,7 @@ function calcWalkDistanceToStop(routeid, stopid, src, dest, mcb){
                     console.log('Error: ', response.body.error)
                 }else{
                     var walkTimeSrc = JSON.parse(body).rows[0].elements[0].duration.value
+                    console.log(body)
                     //walkDistances[routeid].push({stopid: stopid, walkTime: walkTimeSrc})
 
                     request({
