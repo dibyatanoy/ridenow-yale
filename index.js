@@ -209,57 +209,92 @@ function getBestStops(route, src, dest, mcb){
     var stops = route.stops
     walkDistances[routeId] = []
 
-    stops.forEach(function(stopid){
-        asyncTasksStops.push(function(callback){
-            //business logic
-            calcWalkDistanceToStop(routeId, stopid, src, dest, function(){
-                callback()
-            })
-        })
-    })
-
-    async.parallel(asyncTasksStops, function(){
-
-        // walkDistances[routeId] has been populated, find minimum to source and destination
-        if (!routeId in walkDistances){
-            console.log("Error: routeId not in walkDistances")
-        }else{
-
-            var closestStopInfo = {routeId: routeId, routeName: route.long_name, closestToSrc: null, closestToDest: null, 
+    var closestStopInfo = {routeId: routeId, routeName: route.long_name, closestToSrc: null, closestToDest: null, 
                 minDistSrc: null, minDistDest: null}
 
-            var numStopsOnRoute = walkDistances[routeId].length
-            var closestToSrc = null, closestToDest = null
-            var closestToSrcIdx = -1
-            var minDistSrc = 1000000
-            var minDistDest = 1000000
+    var numStopsOnRoute = stops.length
+    var closestToSrc = null, closestToDest = null
+    var closestToSrcIdx = -1
+    var minDistSrc = 1000000
+    var minDistDest = 1000000
 
-            for(var i = 0; i < numStopsOnRoute; i++){
-                if (walkDistances[routeId][i].walkTimeSrc < minDistSrc){
-                    minDistSrc = walkDistances[routeId][i].walkTimeSrc
-                    closestToSrc = walkDistances[routeId][i].stopid
-                    closestToSrcIdx = i
-                }
-            }
+    for(var i = 0; i < numStopsOnRoute; i++){
 
-            for(var i = 0; i < numStopsOnRoute; i++){
-                if(walkDistances[routeId][i].walkTimeDest < minDistDest && i != closestToSrcIdx){
-                    minDistDest = walkDistances[routeId][i].walkTimeDest
-                    closestToDest = walkDistances[routeId][i].stopid
-                }
-            }
-
-            closestStopInfo.closestToSrc = closestToSrc
-            closestStopInfo.closestToDest = closestToDest
-            closestStopInfo.minDistSrc = minDistSrc
-            closestStopInfo.minDistDest = minDistDest
-
-            routesAndClosestStops.push(closestStopInfo)
-
+        if(stops[i] in stopDistancesSrc && stopDistancesSrc[stops[i]] < minDistSrc){
+            minDistSrc = stopDistancesSrc[stops[i]]
+            closestToSrc = stops[i]
+            closestToSrcIdx = i
         }
+    }
 
-        mcb()
-    })
+    for(var i = 0; i < numStopsOnRoute; i++){
+
+        if(stops[i] in stopDistancesDest && stopDistancesDest[stops[i]] < minDistDest && i != closestToSrcIdx){
+            minDistDest = stopDistancesDest[stops[i]]
+            closestToDest = stops[i]
+        }
+    }
+
+    closestStopInfo.closestToSrc = closestToSrc
+    closestStopInfo.closestToDest = closestToDest
+    closestStopInfo.minDistSrc = minDistSrc
+    closestStopInfo.minDistDest = minDistDest
+
+    routesAndClosestStops.push(closestStopInfo)
+
+    mcb()
+
+    // stops.forEach(function(stopid){
+    //     asyncTasksStops.push(function(callback){
+    //         //business logic
+    //         calcWalkDistanceToStop(routeId, stopid, src, dest, function(){
+    //             callback()
+    //         })
+    //     })
+    // })
+
+    // async.parallel(asyncTasksStops, function(){
+
+    //     // walkDistances[routeId] has been populated, find minimum to source and destination
+    //     if (!routeId in walkDistances){
+    //         console.log("Error: routeId not in walkDistances")
+    //     }else{
+
+    //         var closestStopInfo = {routeId: routeId, routeName: route.long_name, closestToSrc: null, closestToDest: null, 
+    //             minDistSrc: null, minDistDest: null}
+
+    //         var numStopsOnRoute = walkDistances[routeId].length
+    //         var closestToSrc = null, closestToDest = null
+    //         var closestToSrcIdx = -1
+    //         var minDistSrc = 1000000
+    //         var minDistDest = 1000000
+
+    //         for(var i = 0; i < numStopsOnRoute; i++){
+    //             if (walkDistances[routeId][i].walkTimeSrc < minDistSrc){
+    //                 minDistSrc = walkDistances[routeId][i].walkTimeSrc
+    //                 closestToSrc = walkDistances[routeId][i].stopid
+    //                 closestToSrcIdx = i
+    //             }
+    //         }
+
+    //         for(var i = 0; i < numStopsOnRoute; i++){
+    //             if(walkDistances[routeId][i].walkTimeDest < minDistDest && i != closestToSrcIdx){
+    //                 minDistDest = walkDistances[routeId][i].walkTimeDest
+    //                 closestToDest = walkDistances[routeId][i].stopid
+    //             }
+    //         }
+
+    //         closestStopInfo.closestToSrc = closestToSrc
+    //         closestStopInfo.closestToDest = closestToDest
+    //         closestStopInfo.minDistSrc = minDistSrc
+    //         closestStopInfo.minDistDest = minDistDest
+
+    //         routesAndClosestStops.push(closestStopInfo)
+
+    //     }
+
+    //     mcb()
+    // })
 }
 
 function getClosestStopsAllRoutes(routes, src, dest){
@@ -279,7 +314,7 @@ function getClosestStopsAllRoutes(routes, src, dest){
         //do something with closest stops for each route
         console.log('Downloaded closest stops for each route')
         console.log(routesAndClosestStops)
-        getStopArrivalTimes(src, dest)
+        //getStopArrivalTimes(src, dest)
     })
 }
 
@@ -374,12 +409,12 @@ function cacheStopDistancesAndContinue(routes, src, dest){
             console.log('Error: ', response.body.error)
         }else{
 
-            //console.log(body)
-
             var srcWalkTimes = body.time
             for (var i = 0; i < numStops; i++){
                 stopDistancesSrc[stopDescs.stop_id] = srcWalkTimes[i+1]
             }
+
+            console.log('completed caching source to stop distances')
 
             request({
                 url: 'http://www.mapquestapi.com/directions/v2/routematrix',
@@ -402,7 +437,7 @@ function cacheStopDistancesAndContinue(routes, src, dest){
                         stopDistancesDest[stopDescs.stop_id] = destWalkTimes[i+1]
                     }
                     console.log('completed caching destination to stop distances')
-                    //getClosestStopsAllRoutes(routes, src, dest)
+                    getClosestStopsAllRoutes(routes, src, dest)
                     
                 }
             })
