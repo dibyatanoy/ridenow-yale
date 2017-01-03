@@ -374,9 +374,9 @@ function cacheStopDistancesAndContinue(routes, src, dest){
             console.log('Error: ', response.body.error)
         }else{
 
-            console.log(body)
+            //console.log(body)
 
-            var srcWalkTimes = JSON.parse(body).time
+            var srcWalkTimes = body.time
             for (var i = 0; i < numStops; i++){
                 stopDistancesSrc[stopDescs.stop_id] = srcWalkTimes[i+1]
             }
@@ -397,7 +397,7 @@ function cacheStopDistancesAndContinue(routes, src, dest){
                     console.log('Error: ', response.body.error)
                 }else{
 
-                    var destWalkTimes = JSON.parse(body).time
+                    var destWalkTimes = body.time
                     for (var i = 0; i < numStops; i++){
                         stopDistancesDest[stopDescs.stop_id] = destWalkTimes[i+1]
                     }
