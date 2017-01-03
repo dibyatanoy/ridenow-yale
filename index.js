@@ -317,6 +317,7 @@ function downloadStopDescsAndContinue(agency, routes, src, dest){
         url: 'https://transloc-api-1-2.p.mashape.com/stops.json',
         qs: {
             agencies: agency,
+            geo_area: '41.3125884,-72.92496140000002|500',
         },
         method: 'GET',
     }, function(error, response, body){
