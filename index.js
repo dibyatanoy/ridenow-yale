@@ -329,7 +329,8 @@ function downloadStopDescsAndContinue(agency, routes, src, dest){
             stopDescs = JSON.parse(body).data
             //console.log(response.body)
             console.log("Downloaded stop information")
-            getClosestStopsAllRoutes(routes, src, dest)
+            console.log(stopDescs.length)
+            //getClosestStopsAllRoutes(routes, src, dest)
         }
     })
 }
