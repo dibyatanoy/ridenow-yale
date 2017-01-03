@@ -374,12 +374,12 @@ function cacheStopDistancesAndContinue(routes, src, dest){
             console.log('Error: ', response.body.error)
         }else{
 
+            console.log(body)
+
             var srcWalkTimes = JSON.parse(body).time
             for (var i = 0; i < numStops; i++){
                 stopDistancesSrc[stopDescs.stop_id] = srcWalkTimes[i+1]
             }
-
-            console.log('completed caching source to stop distances')
 
             request({
                 url: 'http://www.mapquestapi.com/directions/v2/routematrix',
