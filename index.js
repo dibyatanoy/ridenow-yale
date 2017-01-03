@@ -8,8 +8,10 @@ const app = express()
 const fbToken = process.env.RIDE_NOW_FB_TOKEN
 const gmapToken = process.env.RIDENOW_GMAPS_GEOCODING_TOKEN
 const translocKey = process.env.RIDENOW_TRANSLOC_API_KEY
+const mapquestKey = process.env.RIDE_NOW_MAPQUEST_KEY
 const yaleAgencyId = '128'
 const walkTimeTolerance = 60 // in seconds
+const geoFilter = '41.3125884,-72.92496140000002|1500'
 var moment = require('moment')
 
 app.set('port', (process.env.PORT || 5000))
@@ -135,6 +137,8 @@ var routesAndClosestStopsWithArrivals = []
 var routesAndClosestStops = []
 var walkDistances = {}
 var stopDescs = []
+var stopDistancesSrc = {}
+var stopDistancesDest = {}
 
 function calcWalkDistanceToStop(routeid, stopid, src, dest, mcb){
 
@@ -317,7 +321,7 @@ function downloadStopDescsAndContinue(agency, routes, src, dest){
         url: 'https://transloc-api-1-2.p.mashape.com/stops.json',
         qs: {
             agencies: agency,
-            geo_area: '41.3125884,-72.92496140000002|943',
+            geo_area: geoFilter,
         },
         method: 'GET',
     }, function(error, response, body){
@@ -331,7 +335,78 @@ function downloadStopDescsAndContinue(agency, routes, src, dest){
             //console.log(response.body)
             console.log("Downloaded stop information")
             console.log(stopDescs.length)
+            cacheStopDistancesAndContinue(routes, src, dest)
             //getClosestStopsAllRoutes(routes, src, dest)
+        }
+    })
+}
+
+//var stopDistancesSrc = {}
+//var stopDistancesDest = {}
+
+function cacheStopDistancesAndContinue(routes, src, dest){
+
+    var numStops = stopDescs.length
+    var srcStopList = []
+    var destStopList = []
+    srcStopList.push(src.lat.toString() + ',' + src.lng.toString())
+    destStopList.push(dest.lat.toString() + ',' + dest.lng.toString())
+
+    for (var i = 0; i < numStops; i++){
+        var currLoc = stopDescs[i].location
+        srcStopList.push(currLoc.lat.toString() + ',' + currLoc.lng.toString())
+        destStopList.push(currLoc.lat.toString() + ',' + currLoc.lng.toString())
+    }
+
+    request({
+        url: 'http://www.mapquestapi.com/directions/v2/routematrix',
+        qs:{
+            key: mapquestKey,
+        },
+        method: 'POST',
+        json: {
+            locations: srcStopList,
+        },
+    }, function(error, response, body){
+        if (error) {
+            console.log('Error getting distances: ', error)
+        } else if (response.body.error) {
+            console.log('Error: ', response.body.error)
+        }else{
+
+            var srcWalkTimes = JSON.parse(body).time
+            for (var i = 0; i < numStops; i++){
+                stopDistancesSrc[stopDescs.stop_id] = srcWalkTimes[i+1]
+            }
+
+            console.log('completed caching source to stop distances')
+
+            request({
+                url: 'http://www.mapquestapi.com/directions/v2/routematrix',
+                qs:{
+                    key: mapquestKey,
+                },
+                method: 'POST',
+                json: {
+                    locations: destStopList,
+                },
+            }, function(error, response, body){
+                if (error) {
+                    console.log('Error getting distances: ', error)
+                } else if (response.body.error) {
+                    console.log('Error: ', response.body.error)
+                }else{
+
+                    var destWalkTimes = JSON.parse(body).time
+                    for (var i = 0; i < numStops; i++){
+                        stopDistancesDest[stopDescs.stop_id] = destWalkTimes[i+1]
+                    }
+                    console.log('completed caching destination to stop distances')
+                    //getClosestStopsAllRoutes(routes, src, dest)
+                    
+                }
+            })
+
         }
     })
 }
