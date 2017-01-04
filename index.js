@@ -512,6 +512,7 @@ function getStopArrivalTimes(src, dest){
         },
         url: 'https://transloc-api-1-2.p.mashape.com/arrival-estimates.json',
         qs: {
+            agencies: 'yale',
             stops: stopIdString,
         },
         method: 'GET',
