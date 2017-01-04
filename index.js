@@ -139,6 +139,7 @@ var walkDistances = {}
 var stopDescs = []
 var stopDistancesSrc = {}
 var stopDistancesDest = {}
+var stopNames = {}
 
 function calcWalkDistanceToStop(routeid, stopid, src, dest, mcb){
 
@@ -370,6 +371,11 @@ function downloadStopDescsAndContinue(agency, routes, src, dest){
             //console.log(response.body)
             console.log("Downloaded stop information")
             console.log(stopDescs.length)
+
+            stopDescs.forEach(function(stop){
+                stopNames[stop.stop_id] = {name: stop.name, lat: stop.location.lat, lng: stop.location.lng}
+            })
+
             cacheStopDistancesAndContinue(routes, src, dest)
             //getClosestStopsAllRoutes(routes, src, dest)
         }
@@ -534,15 +540,54 @@ function getStopArrivalTimes(src, dest){
                     if (!(arrival.route_id in stopArrivalLists[currStop]))
                         stopArrivalLists[currStop][arrival.route_id] = []
 
-                    var millisecTime = moment(arrival.arrival_at)
-                    stopArrivalLists[currStop][arrival.route_id].push(millisecTime) // need to sort
-                    stopArrivalLists[currStop][arrival.route_id].sort()
+                    var millisecTime = new Date(arrival.arrival_at).getTime()
+                    stopArrivalLists[currStop][arrival.route_id].push({msec: millisecTime, actual: arrival.arrival_at}) // need to sort
+                    stopArrivalLists[currStop][arrival.route_id].sort(function(a,b){
+                        if(a.msec < b.msec) return -1;
+                        if(b.msec < a.msec) return 1;
+                        return 0;
+                    })
                 })
 
             }
-            console.log('completed cahching arrival times')
-            console.log(stopArrivalLists)
+            console.log('completed caching arrival times')
 
+            routesAndClosestStops.forEach(function(routeAndStops){
+
+                var newEntry = {
+                    routeId: routeAndStops.routeId,
+                    routeName: routeAndStops.routeName,
+                    closestToSrc: routeAndStops.closestToSrc,
+                    closestToDest: routeAndStops.closestToDest,
+                    minDistSrc: routeAndStops.minDistSrc,
+                    minDistDest: routeAndStops.minDistDest,
+                }
+                // possible edge case: last bus of the day, not going round fully
+                if ((newEntry.closestToSrc in stopArrivalLists)
+                    && (newEntry.routeId in stopArrivalLists[newEntry.closestToSrc])
+                    && (newEntry.closestToDest in stopArrivalLists)
+                    && (newEntry.routeId in stopArrivalLists[newEntry.closestToDest])
+                    && stopArrivalLists[newEntry.closestToSrc][newEntry.routeId].length > 0
+                    && stopArrivalLists[newEntry.closestToDest][newEntry.routeId].length > 0){
+
+                    // take best 2 (if available) for each route
+                    newEntry.srcArrivalTime = stopArrivalLists[newEntry.closestToSrc][newEntry.routeId][0]
+                    routesAndClosestStopsWithArrivals.push(newEntry)
+
+                    if (stopArrivalLists[newEntry.closestToSrc][newEntry.routeId].length > 1){
+                        newEntry.srcArrivalTime = stopArrivalLists[newEntry.closestToSrc][newEntry.routeId][1]
+                        routesAndClosestStopsWithArrivals.push(newEntry)
+                    }
+
+                    routesAndClosestStopsWithArrivals.sort(function(a, b){
+                        return (a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest)
+                    })
+
+                    console.log('Completed')
+                    console.log(routesAndClosestStopsWithArrivals)
+                }
+            })
+            
         }
     })
 
