@@ -575,15 +575,36 @@ function getStopArrivalTimes(src, dest){
                     routesAndClosestStopsWithArrivals.push(newEntry)
 
                     if (stopArrivalLists[newEntry.closestToSrc][newEntry.routeId].length > 1){
-                        newEntry.srcArrivalTime = stopArrivalLists[newEntry.closestToSrc][newEntry.routeId][1]
-                        routesAndClosestStopsWithArrivals.push(newEntry)
+
+                        var newEntry2 = {
+                            routeId: routeAndStops.routeId,
+                            routeName: routeAndStops.routeName,
+                            closestToSrc: routeAndStops.closestToSrc,
+                            closestToDest: routeAndStops.closestToDest,
+                            minDistSrc: routeAndStops.minDistSrc,
+                            minDistDest: routeAndStops.minDistDest,
+                        }
+
+                        newEntry2.srcArrivalTime = stopArrivalLists[newEntry.closestToSrc][newEntry.routeId][1]
+                        routesAndClosestStopsWithArrivals.push(newEntry2)
                     }
 
                     routesAndClosestStopsWithArrivals.sort(function(a, b){
+
+                        //if stops within one minute of eacb other, sort by arrival times
+                        if (abs(a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest) < 60){
+                            return (a.srcArrivalTime.msec - b.srcArrivalTime.msec)
+                        }
                         return (a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest)
                     })
 
                     console.log('Completed')
+                    routesAndClosestStopsWithArrivals.forEach(function(suggestion){
+
+                        suggestion.closestToSrc = stopNames[suggestion.closestToSrc].name
+                        suggestion.closestToDest = stopNames[suggestion.closestToDest].name
+                    })
+
                     console.log(routesAndClosestStopsWithArrivals)
                 }
             })
