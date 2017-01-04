@@ -165,7 +165,7 @@ function calcWalkDistanceToStop(routeid, stopid, src, dest, mcb){
                 } else if (response.body.error) {
                     console.log('Error: ', response.body.error)
                 }else{
-                    console.log(body)
+                    //console.log(body)
                     var walkTimeSrc = JSON.parse(body).rows[0].elements[0].duration.value
                     //walkDistances[routeid].push({stopid: stopid, walkTime: walkTimeSrc})
 
@@ -314,7 +314,7 @@ function getClosestStopsAllRoutes(routes, src, dest){
         //do something with closest stops for each route
         console.log('Downloaded closest stops for each route')
         console.log(routesAndClosestStops)
-        //getStopArrivalTimes(src, dest)
+        getStopArrivalTimes(src, dest)
     })
 }
 
@@ -488,25 +488,82 @@ function getArrivals(routeAndStops, src, dest, mcb){
 
 function getStopArrivalTimes(src, dest){
 
+    // download arrivals for all the stops we need with one request,
+    // then cache and use as necessary
+
+    var stopArrivalLists = {}   // stopArrivalLists[stop_id][route_id] = [..., ...]
+    var stopIdString = ""
+
+    routesAndClosestStops.forEach(function(routeAndStops){
+        if (routeAndStops.closestToSrc != null){
+            if(stopIdString != "") stopIdString += ','
+            stopIdString += routeAndStops.closestToSrc
+        }
+        if (routeAndStops.closestToDest != null){
+            if(stopIdString != "") stopIdString += ','
+            stopIdString += routeAndStops.closestToDest
+        }
+    })
+
+    request({
+        headers: {
+            'X-Mashape-Key': translocKey,
+            'Accept': 'application/json',
+        },
+        url: 'https://transloc-api-1-2.p.mashape.com/arrival-estimates.json',
+        qs: {
+            stops: stopIdString,
+        },
+        method: 'GET',
+    }, function(error, response, body){
+        if (error) {
+            console.log('Error getting distance matrix: ', error)
+        } else if (response.body.error) {
+            console.log('Error: ', response.body.error)
+        }else{
+
+            var stopsWithArrivals = JSON.parse(body).data
+            var numStopsWithArrivals = stopsWithArrivals.length
+
+            for (var i = 0; i < numStopsWithArrivals; i++){
+                stopArrivalLists[stopsWithArrivals[i].stop_id] = {}
+                var currStop = stopsWithArrivals[i].stop_id
+                
+                stopsWithArrivals[i].arrivals.forEach(function(arrival){
+                    if (!(arrival.route_id in stopArrivalLists[currStop]))
+                        stopArrivalLists[currStop][arrival.route_id] = []
+
+                    var millisecTime = moment(arrival.arrival_at)
+                    stopArrivalLists[currStop][arrival.route_id].push(millisecTime) // need to sort
+                    stopArrivalLists[currStop][arrival.route_id].sort()
+                })
+
+            }
+            console.log('completed cahching arrival times')
+            console.log(stopArrivalLists)
+
+        }
+    })
+
     // for each route, we have two stops
     // for the srcStops only, find the arrival times
     // if no arrival time, don't add to array
     // at the end, 
 
-    var asyncTasksArrivals = []
+    // var asyncTasksArrivals = []
 
-    routesAndClosestStops.forEach(function(routeAndStops){
-        asyncTasksArrivals.push(function(callback){
+    // routesAndClosestStops.forEach(function(routeAndStops){
+    //     asyncTasksArrivals.push(function(callback){
 
-            getArrivals(routeAndStops, src, dest, function(){
-                callback()
-            })
-        })
-    })
+    //         getArrivals(routeAndStops, src, dest, function(){
+    //             callback()
+    //         })
+    //     })
+    // })
 
-    async.parallel(asyncTasksArrivals, function(){
-        // do something next
-    })
+    // async.parallel(asyncTasksArrivals, function(){
+    //     // do something next
+    // })
 }
 
 function getRouteArrivalTimes(routeId){
