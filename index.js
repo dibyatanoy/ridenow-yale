@@ -46,7 +46,7 @@ app.post('/webhook/', function (req, res) {
             console.log("text received")
             //geoCode(text + ", New Haven, CT")
             //getRoutes('yale')
-            ownloadRoutesAndContinue('yale', {lat: 41.309669, lng: -72.929869}, {lat: 41.315753, lng: -72.923775})
+            downloadRoutesAndContinue('yale', {lat: 41.309669, lng: -72.929869}, {lat: 41.315753, lng: -72.923775})
             //downloadRoutesAndContinue('yale', {lat: 41.3102168, lng: -72.93068079999999}, {lat: 41.3125884, lng: -72.92496140000002})
         }else if (event.message && event.message.attachments){
 
