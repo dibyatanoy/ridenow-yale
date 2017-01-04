@@ -591,8 +591,8 @@ function getStopArrivalTimes(src, dest){
 
                     routesAndClosestStopsWithArrivals.sort(function(a, b){
 
-                        //if stops within one minute of eacb other, sort by arrival times
-                        if (Math.abs(a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest) < 60){
+                        //if stops within 20s of eacb other, sort by arrival times
+                        if (Math.abs(a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest) < 20){
                             return (a.srcArrivalTime.msec - b.srcArrivalTime.msec)
                         }
                         return (a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest)
@@ -601,8 +601,8 @@ function getStopArrivalTimes(src, dest){
                     console.log('Completed')
                     routesAndClosestStopsWithArrivals.forEach(function(suggestion){
 
-                        suggestion.closestToSrc = stopNames[suggestion.closestToSrc].name
-                        suggestion.closestToDest = stopNames[suggestion.closestToDest].name
+                        suggestion.closestToSrcName = stopNames[suggestion.closestToSrc].name
+                        suggestion.closestToDestName = stopNames[suggestion.closestToDest].name
                     })
 
                     console.log(routesAndClosestStopsWithArrivals)
