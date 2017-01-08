@@ -948,7 +948,7 @@ const actions = {
             // Yay, we found our recipient!
             // Let's forward our bot response to her.
             // We return a promise to let our bot know when we're done sending
-            return sendMessageWithActions(recipientId, text, context, [])
+            return sendMessageWithActions(recipientId, text, context, null)
             //return sendTextMessage(recipientId, text, context)
             
         } else {
