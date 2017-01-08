@@ -65,6 +65,8 @@ app.post('/webhook/', function (req, res) {
                 var latitude = event.message.attachments[0].payload.coordinates.lat
                 var longitude = event.message.attachments[0].payload.coordinates.long
 
+                console.log("latitude and longitude received")
+
                 // do something with this...
             }else{
                 console.log("Attachment with no coordinates received.")
@@ -87,8 +89,9 @@ function sendTextMessage(sender, text, suggestions) {
             var marker1 = stopNames[suggestion.closestToSrc].lat.toString() + "," + stopNames[suggestion.closestToSrc].lng.toString()
             var marker2 = stopNames[suggestion.closestToDest].lat.toString() + "," + stopNames[suggestion.closestToDest].lng.toString()
 
+            // for some reason, the map in messenger cannot display 2 markers simultaneously
             element.image_url = "http://maps.google.com/maps/api/staticmap?center="+img_center+"&zoom=15&size=512x512&markers=color:blue|label:S|"+marker1
-            console.log(element.image_url)
+            //console.log(element.image_url)
             element.title = suggestion.routeName
             var utcOffset = moment.parseZone(suggestion.srcArrivalTime.actual).utcOffset();
             element.subtitle = "Board at " + suggestion.closestToSrcName + " at " + moment.utc(suggestion.srcArrivalTime.actual).utcOffset(utcOffset).format("HH:mm") + " and get off at " + suggestion.closestToDestName
