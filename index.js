@@ -9,6 +9,7 @@ const fbToken = process.env.RIDE_NOW_FB_TOKEN
 const gmapToken = process.env.RIDENOW_GMAPS_GEOCODING_TOKEN
 const translocKey = process.env.RIDENOW_TRANSLOC_API_KEY
 const mapquestKey = process.env.RIDE_NOW_MAPQUEST_KEY
+const witToken = process.env.RIDENOW_WIT_TOKEN;
 const yaleAgencyId = '128'
 const walkTimeTolerance = 60 // in seconds
 const geoFilter = '41.3125884,-72.92496140000002|1500'
@@ -16,6 +17,31 @@ const geoFilter = '41.3125884,-72.92496140000002|1500'
 const upstreamStops = ['4096830', '4096834', '4096838', '4096842', '4096846', '4096850', '4096854', '4096906', '4096926', '4096942', '4096946', '4096966', '4096970', '4096978', '4096982', '4097002', '4097014', '4097030', '4097062', '4097074', '4128602', '4132142', '4143990', '4161262', '']
 const downstreamStops = ['4096870', '4096878', '4096882', '4096886', '4096890', '4096898', '4096902', '4096910', '4096914', '4096922', '4096930', '4096934', '4096938', '4096958', '4096962', '4096974', '4096986', '4096990', '4096994', '4096998', '4097062', '4097070', '4144014', '']
 var moment = require('moment')
+let Wit = null
+let log = null
+
+try {
+  // if running from repo
+  Wit = require('../').Wit;
+  log = require('../').log;
+} catch (e) {
+  Wit = require('node-wit').Wit;
+  log = require('node-wit').log;
+}
+
+const sessions = {};
+
+const lastEntityValue = (entities, entity) => {
+  const val = entities && entities[entity] &&
+    Array.isArray(entities[entity]) &&
+    entities[entity].length > 0 &&
+    entities[entity][entities[entity].length - 1].value
+  ;
+  if (!val) {
+    return null;
+  }
+  return typeof val === 'object' ? val.value : val;
+};
 
 app.set('port', (process.env.PORT || 5000))
 
@@ -58,8 +84,36 @@ app.post('/webhook/', function (req, res) {
             stopDistancesDest = {}
             stopNames = {}
 
-            downloadRoutesAndContinue(sender, 'yale', {lat: 41.3102168, lng: -72.93068079999999}, {lat: 41.3125884, lng: -72.92496140000002})
+            const sessionId = findOrCreateSession(sender)
+            delete sessions[sessionId].context.hasAttachment
+            sessions[sessionId].context.lacksAttachment = true
+            //let reminder_event = 
+            //parseResponse(sender, text)
+            wit.runActions(
+                sessionId,
+                text,
+                sessions[sessionId].context
+            ).then((context) => {
+                sessions[sessionId].context = context
+            })
+            .catch((err) => {
+                console.error('Oops! Got an error from Wit: ', err.stack || err);
+            })
+
+            //downloadRoutesAndContinue(sender, 'yale', {lat: 41.3102168, lng: -72.93068079999999}, {lat: 41.3125884, lng: -72.92496140000002})
         }else if (event.message && event.message.attachments){
+
+            routesAndClosestStopsWithArrivals = []
+            routesAndClosestStops = []
+            walkDistances = {}
+            stopDescs = []
+            stopDistancesSrc = {}
+            stopDistancesDest = {}
+            stopNames = {}
+
+            const sessionId = findOrCreateSession(sender)
+            //let reminder_event = 
+            //parseResponse(sender, text)
 
             if(event.message.attachments[0].payload.coordinates){
                 var latitude = event.message.attachments[0].payload.coordinates.lat
@@ -67,17 +121,102 @@ app.post('/webhook/', function (req, res) {
 
                 console.log("latitude and longitude received")
 
+                delete sessions[sessionId].context.lacksAttachment
+                sessions[sessionId].context.hasAttachment = true
+                sessions[sessionId].context.srcLat = latitude
+                sessions[sessionId].context.srcLng = longitude
+
                 // do something with this...
             }else{
+
+                delete sessions[sessionId].context.hasAttachment
+                sessions[sessionId].context.lacksAttachment = true
                 console.log("Attachment with no coordinates received.")
             }
+
+            wit.runActions(
+                sessionId,
+                text,
+                sessions[sessionId].context
+            ).then((context) => {
+                sessions[sessionId].context = context
+            })
+            .catch((err) => {
+                console.error('Oops! Got an error from Wit: ', err.stack || err);
+            })
         }
     }
     res.sendStatus(200)
 })
 
-function sendTextMessage(sender, text, suggestions) {
-    let messageData = { text:text }
+function sendMessageWithActions(sender, text, context, suggestions){
+
+
+    if ('typingOn' in context){
+
+        // toggle it off
+        delete context.typingOn
+        request({
+            url: 'https://graph.facebook.com/v2.6/me/messages',
+            qs: {access_token:fbToken},
+            method: 'POST',
+            json: {
+                recipient: {id:sender},
+                sender_action: "typing_off",
+            }
+        }, function(error, response, body) {
+            if (error) {
+                console.log('Error sending messages: ', error)
+            } else if (response.body.error) {
+                console.log('Error: ', response.body.error)
+            }else{
+                sendTextMessage(sender, text, context, suggestions)
+            }
+        })
+    }else{
+
+        // check if message is "Thanks!" - if yes, turn typing on
+        if (text == "Thanks!"){
+            context.typingOn = true
+            let messageData = { text:text }
+            request({
+                url: 'https://graph.facebook.com/v2.6/me/messages',
+                qs: {access_token:fbToken},
+                method: 'POST',
+                json: {
+                    recipient: {id:sender},
+                    message: messageData,
+                }
+            }, function(error, response, body) {
+                if (error) {
+                    console.log('Error sending messages: ', error)
+                } else if (response.body.error) {
+                    console.log('Error: ', response.body.error)
+                }else{
+                    request({
+                        url: 'https://graph.facebook.com/v2.6/me/messages',
+                        qs: {access_token:fbToken},
+                        method: 'POST',
+                        json: {
+                            recipient: {id:sender},
+                            sender_action: "typing_on",
+                        }
+                    }, function(error, response, body) {
+                        if (error) {
+                            console.log('Error sending messages: ', error)
+                        } else if (response.body.error) {
+                            console.log('Error: ', response.body.error)
+                        }
+                    })
+                }
+            })
+        }else{
+            sendTextMessage(sender, text, context, suggestions)
+        }
+    }
+}
+
+function sendTextMessage(sender, text, context, suggestions) {
     if (suggestions){
 
         var elements = []
@@ -125,6 +264,7 @@ function sendTextMessage(sender, text, suggestions) {
         })
 
     }else{
+        let messageData = { text:text }
         request({
             url: 'https://graph.facebook.com/v2.6/me/messages',
             qs: {access_token:fbToken},
@@ -721,13 +861,124 @@ function getStopArrivalTimes(sender, src, dest){
     // })
 }
 
-function getRouteArrivalTimes(routeId){
+///////////////// Wit.ai code //////////////////////////
 
+const findOrCreateSession = (fbid) => {
+
+    let sessionId;
+
+    Object.keys(sessions).forEach(k => {
+        if (sessions[k].fbid === fbid){
+            sessionId = k;
+        }
+    });
+    if (!sessionId){
+        sessionId = new Date().toISOString();
+        sessions[sessionId] = {fbid: fbid, context: {sender: fbid, sessionId: sessionId}};
+    }
+    return sessionId;
+};
+
+function checkIfHasMap(context, entities, resolve, reject){
+
+    var yesNoVal = lastEntityValue(entities, "yesno")
+
+    if (yesNoVal){
+        delete context.hasAttachment
+        delete context.lacksAttachment
+        context.cancelflow = true
+    }
+
+    sessions[context.sessionId].context = context
+    return resolve(context)
 }
 
-function getWalkingDistance(src, dest){
+function geocodeDestination(context, entities, resolve, reject){
 
+    var location = lastEntityValue(entities, 'location')
+
+    if (location){
+
+        // try to geocode
+        request({
+        url: 'https://maps.googleapis.com/maps/api/geocode/json',
+            qs: {
+                address: location,
+                key: gmapToken,
+            },
+            method: 'GET',
+        }, function(error, response, body){
+            if (error || response.body.error) {
+                delete context.validDest
+                context.invalidDest = true
+                console.log('Error: ', response.body.error)
+            }else{
+
+                delete context.invalidDest
+                context.validDest = true
+                context.destLat = JSON.parse(body).results[0].geometry.location.lat
+                context.destLng = JSON.parse(body).results[0].geometry.location.lng
+                //console.log('lat: %f, long: %f', JSON.parse(body).results[0].geometry.location.lat, JSON.parse(body).results[0].geometry.location.lng)
+                console.log(body)
+                //console.log(response.body)
+            }
+            
+            sessions[context.sessionId].context = context
+            var src = {lat: context.srcLat, lng: context.srcLng}
+            var dest = {lat: context.destLat, lng: context.destLng}
+            downloadRoutesAndContinue(sender, 'yale', src, dest)
+            return resolve(context)
+        })
+
+    }else{
+
+        delete context.validDest
+        context.invalidDest = true
+
+        sessions[context.sessionId].context = context
+        return resolve(context)
+    }
 }
+
+const actions = {
+    send({sessionId}, {text}){
+        const recipientId = sessions[sessionId].fbid;
+        var context = sessions[sessionId].context
+        if (recipientId) {
+            // Yay, we found our recipient!
+            // Let's forward our bot response to her.
+            // We return a promise to let our bot know when we're done sending
+            return sendMessageWithActions(recipientId, text, context, [])
+            //return sendTextMessage(recipientId, text, context)
+            
+        } else {
+            console.error('Oops! Couldn\'t find user for session:', sessionId);
+            // Giving the wheel back to our bot
+            return Promise.resolve()
+        }
+    },
+    processAttachment({context, entities}){
+
+        return new Promise(function(resolve, reject){
+            // because async call, pass all of this info (context, entities, resolve, reject)
+            // to parseResponse
+            return checkIfHasMap(context, entities, resolve, reject)
+            //return resolve(context)
+        })
+
+    },
+    processDestination({context, entities}){
+        return new Promise(function(resolve, reject){
+            return geocodeDestination(context, entities, resolve, reject)
+        })
+    },
+};
+
+const wit = new Wit({
+  accessToken: witToken,
+  actions,
+  logger: new log.Logger(log.INFO)
+});
 
 
 // getting static map images eg: http://maps.googleapis.com/maps/api/staticmap?size=764x400&center=41.3084858,-72.92825460000002&zoom=17&markers=41.3084858,-72.92825460000002
