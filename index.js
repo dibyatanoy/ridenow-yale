@@ -12,6 +12,9 @@ const mapquestKey = process.env.RIDE_NOW_MAPQUEST_KEY
 const yaleAgencyId = '128'
 const walkTimeTolerance = 60 // in seconds
 const geoFilter = '41.3125884,-72.92496140000002|1500'
+// predetermined: 4097030, 4097062 (both-way!), 4097074, 4128602, 4132142, 4097070, 4143990, 4144014, 4161262
+const upstreamStops = ['4096830', '4096834', '4096838', '4096842', '4096846', '4096850', '4096854', '4096906', '4096926', '4096942', '4096946', '4096966', '4096970', '4096978', '4096982', '4097002', '4097014', '4097030', '4097062', '4097074', '4128602', '4132142', '4143990', '4161262', '']
+const downstreamStops = ['4096870', '4096878', '4096882', '4096886', '4096890', '4096898', '4096902', '4096910', '4096914', '4096922', '4096930', '4096934', '4096938', '4096958', '4096962', '4096974', '4096986', '4096990', '4096994', '4096998', '4097062', '4097070', '4144014', '']
 var moment = require('moment')
 
 app.set('port', (process.env.PORT || 5000))
@@ -553,6 +556,11 @@ function getStopArrivalTimes(src, dest){
             }
             console.log('completed caching arrival times')
 
+            var validStops = upstreamStops
+            if ((dest.lat - src.lat) < 0.0){
+                validStops = downstreamStops
+            }
+
             routesAndClosestStops.forEach(function(routeAndStops){
 
                 var newEntry = {
@@ -562,6 +570,9 @@ function getStopArrivalTimes(src, dest){
                     closestToDest: routeAndStops.closestToDest,
                     minDistSrc: routeAndStops.minDistSrc,
                     minDistDest: routeAndStops.minDistDest,
+                    // same direction as src -> dest: 0, else 1
+                    direction: (validStops.indexOf(routeAndStops.closestToSrc) != -1) 0 : 1,
+                    //direction: (((stopNames[routeAndStops.closestToDest].lat - stopNames[routeAndStops.closestToSrc].lat) * direction) > 0) ? 0 : 1 
                 }
                 // possible edge case: last bus of the day, not going round fully
                 if ((newEntry.closestToSrc in stopArrivalLists)
@@ -584,6 +595,7 @@ function getStopArrivalTimes(src, dest){
                             closestToDest: routeAndStops.closestToDest,
                             minDistSrc: routeAndStops.minDistSrc,
                             minDistDest: routeAndStops.minDistDest,
+                            direction: (validStops.indexOf(routeAndStops.closestToSrc) != -1) 0 : 1,
                         }
 
                         newEntry2.srcArrivalTime = stopArrivalLists[newEntry.closestToSrc][newEntry.routeId][1]
@@ -592,7 +604,14 @@ function getStopArrivalTimes(src, dest){
 
                     routesAndClosestStopsWithArrivals.sort(function(a, b){
 
-                        //if stops within 20s of eacb other, sort by arrival times
+                        // if one is in the correct direction and the other isn't, take the first
+                        if (a.direction != b.direction){
+                            if (a.direction == 0) 
+                                return -1
+                            else
+                                return 1
+                        }
+                        //if stops within 20s of each other, sort by arrival times
                         if (Math.abs(a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest) < 20){
                             return (a.srcArrivalTime.msec - b.srcArrivalTime.msec)
                         }
