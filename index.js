@@ -50,7 +50,15 @@ app.post('/webhook/', function (req, res) {
             //geoCode(text + ", New Haven, CT")
             //getRoutes('yale')
             //downloadRoutesAndContinue('yale', {lat: 41.309669, lng: -72.929869}, {lat: 41.315753, lng: -72.923775})
-            downloadRoutesAndContinue('yale', {lat: 41.3102168, lng: -72.93068079999999}, {lat: 41.3125884, lng: -72.92496140000002})
+            routesAndClosestStopsWithArrivals = []
+            routesAndClosestStops = []
+            walkDistances = {}
+            stopDescs = []
+            stopDistancesSrc = {}
+            stopDistancesDest = {}
+            stopNames = {}
+
+            downloadRoutesAndContinue(sender, 'yale', {lat: 41.3102168, lng: -72.93068079999999}, {lat: 41.3125884, lng: -72.92496140000002})
         }else if (event.message && event.message.attachments){
 
             if(event.message.attachments[0].payload.coordinates){
@@ -66,23 +74,70 @@ app.post('/webhook/', function (req, res) {
     res.sendStatus(200)
 })
 
-function sendTextMessage(sender, text) {
+function sendTextMessage(sender, text, suggestions) {
     let messageData = { text:text }
-    request({
-        url: 'https://graph.facebook.com/v2.6/me/messages',
-        qs: {access_token:token},
-        method: 'POST',
-        json: {
-            recipient: {id:sender},
-            message: messageData,
+    if (suggestions){
+
+        var elements = []
+
+        suggestions.forEach(function(suggestion){
+            var element = {"title": null, "subtitle": null, "image_url": null}
+
+            var img_center = ((stopNames[suggestion.closestToSrc].lat + stopNames[suggestion.closestToDest].lat) / 2).toString() + "," + ((stopNames[suggestion.closestToSrc].lng + stopNames[suggestion.closestToDest].lng) / 2).toString();
+            var marker1 = stopNames[suggestion.closestToSrc].lat.toString() + "," + stopNames[suggestion.closestToSrc].lng.toString()
+            var marker2 = stopNames[suggestion.closestToDest].lat.toString() + "," + stopNames[suggestion.closestToDest].lng.toString()
+
+            element.image_url = "http://maps.google.com/maps/api/staticmap?center="+img_center+"&zoom=15&size=512x512&markers=color:blue|label:S|"+marker1+"&markers=color:red|label:E|"+marker2
+            element.title = suggestion.routeName
+            var utcOffset = moment.parseZone(suggestion.srcArrivalTime.actual).utcOffset();
+            element.subtitle = "Board at " + suggestion.closestToSrcName + " at " + moment.utc(suggestion.srcArrivalTime.actual).utcOffset(utcOffset).format("HH:mm") + " and get off at " + suggestion.closestToDestName
+            elements.push(element)
+        })
+
+        let messageData = {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": elements,
+                },
+            },
         }
-    }, function(error, response, body) {
-        if (error) {
-            console.log('Error sending messages: ', error)
-        } else if (response.body.error) {
-            console.log('Error: ', response.body.error)
-        }
-    })
+
+        request({
+            url: 'https://graph.facebook.com/v2.6/me/messages',
+            qs: {access_token:token},
+            method: 'POST',
+            json: {
+                recipient: {id:sender},
+                message: messageData,
+            }
+        }, function(error, response, body) {
+            if (error) {
+                console.log('Error sending messages: ', error)
+            } else if (response.body.error) {
+                console.log('Error: ', response.body.error)
+            }
+        })
+
+    }else{
+        request({
+            url: 'https://graph.facebook.com/v2.6/me/messages',
+            qs: {access_token:token},
+            method: 'POST',
+            json: {
+                recipient: {id:sender},
+                message: messageData,
+            }
+        }, function(error, response, body) {
+            if (error) {
+                console.log('Error sending messages: ', error)
+            } else if (response.body.error) {
+                console.log('Error: ', response.body.error)
+            }
+        })
+    }
+    
 }
 
 // Spin up the server
@@ -302,7 +357,7 @@ function getBestStops(route, src, dest, mcb){
     // })
 }
 
-function getClosestStopsAllRoutes(routes, src, dest){
+function getClosestStopsAllRoutes(sender, routes, src, dest){
 
     var asyncTasksRoutes = []
 
@@ -319,11 +374,11 @@ function getClosestStopsAllRoutes(routes, src, dest){
         //do something with closest stops for each route
         console.log('Downloaded closest stops for each route')
         console.log(routesAndClosestStops)
-        getStopArrivalTimes(src, dest)
+        getStopArrivalTimes(sender, src, dest)
     })
 }
 
-function downloadRoutesAndContinue(agency, src, dest){
+function downloadRoutesAndContinue(sender, agency, src, dest){
 
     request({
         headers: {
@@ -344,12 +399,12 @@ function downloadRoutesAndContinue(agency, src, dest){
             //console.log('lat: %f, long: %f', JSON.parse(body).results[0].geometry.location.lat, JSON.parse(body).results[0].geometry.location.lng)
             var routes = JSON.parse(body).data[yaleAgencyId]
             console.log("Downloaded route information")
-            downloadStopDescsAndContinue(agency, routes, src, dest)
+            downloadStopDescsAndContinue(sender, agency, routes, src, dest)
         }
     })
 }
 
-function downloadStopDescsAndContinue(agency, routes, src, dest){
+function downloadStopDescsAndContinue(sender, agency, routes, src, dest){
 
     //save .data part to stopDescs
 
@@ -380,7 +435,7 @@ function downloadStopDescsAndContinue(agency, routes, src, dest){
                 stopNames[stop.stop_id] = {name: stop.name, lat: stop.location.lat, lng: stop.location.lng}
             })
 
-            cacheStopDistancesAndContinue(routes, src, dest)
+            cacheStopDistancesAndContinue(sender, routes, src, dest)
             //getClosestStopsAllRoutes(routes, src, dest)
         }
     })
@@ -389,7 +444,7 @@ function downloadStopDescsAndContinue(agency, routes, src, dest){
 //var stopDistancesSrc = {}
 //var stopDistancesDest = {}
 
-function cacheStopDistancesAndContinue(routes, src, dest){
+function cacheStopDistancesAndContinue(sender, routes, src, dest){
 
     var numStops = stopDescs.length
     var srcStopList = []
@@ -448,7 +503,7 @@ function cacheStopDistancesAndContinue(routes, src, dest){
                         stopDistancesDest[stopDescs[i].stop_id] = destWalkTimes[i+1]
                     }
                     console.log('completed caching destination to stop distances')
-                    getClosestStopsAllRoutes(routes, src, dest)
+                    getClosestStopsAllRoutes(sender, routes, src, dest)
                     
                 }
             })
@@ -496,7 +551,7 @@ function getArrivals(routeAndStops, src, dest, mcb){
     })
 }
 
-function getStopArrivalTimes(src, dest){
+function getStopArrivalTimes(sender, src, dest){
 
     // download arrivals for all the stops we need with one request,
     // then cache and use as necessary
@@ -633,7 +688,8 @@ function getStopArrivalTimes(src, dest){
                         suggestion.closestToDestName = stopNames[suggestion.closestToDest].name
                     })
 
-                    console.log(routesAndClosestStopsWithArrivals)
+                    sendTextMessage(sender, "This is what I found: ", routesAndClosestStopsWithArrivals)
+                    //console.log(routesAndClosestStopsWithArrivals)
                 }
             })
             
