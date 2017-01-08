@@ -563,6 +563,14 @@ function getStopArrivalTimes(src, dest){
 
             routesAndClosestStops.forEach(function(routeAndStops){
 
+                var currDir
+
+                if (validStops.indexOf(routeAndStops.closestToSrc) != -1){
+                    currDir = 0
+                }else{
+                    currDir = 1
+                }
+
                 var newEntry = {
                     routeId: routeAndStops.routeId,
                     routeName: routeAndStops.routeName,
@@ -571,7 +579,7 @@ function getStopArrivalTimes(src, dest){
                     minDistSrc: routeAndStops.minDistSrc,
                     minDistDest: routeAndStops.minDistDest,
                     // same direction as src -> dest: 0, else 1
-                    direction: (validStops.indexOf(routeAndStops.closestToSrc) != -1) 0 : 1,
+                    direction: currDir,
                     //direction: (((stopNames[routeAndStops.closestToDest].lat - stopNames[routeAndStops.closestToSrc].lat) * direction) > 0) ? 0 : 1 
                 }
                 // possible edge case: last bus of the day, not going round fully
@@ -595,7 +603,7 @@ function getStopArrivalTimes(src, dest){
                             closestToDest: routeAndStops.closestToDest,
                             minDistSrc: routeAndStops.minDistSrc,
                             minDistDest: routeAndStops.minDistDest,
-                            direction: (validStops.indexOf(routeAndStops.closestToSrc) != -1) 0 : 1,
+                            direction: currDir,
                         }
 
                         newEntry2.srcArrivalTime = stopArrivalLists[newEntry.closestToSrc][newEntry.routeId][1]
