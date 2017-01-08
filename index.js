@@ -88,6 +88,7 @@ function sendTextMessage(sender, text, suggestions) {
             var marker2 = stopNames[suggestion.closestToDest].lat.toString() + "," + stopNames[suggestion.closestToDest].lng.toString()
 
             element.image_url = "http://maps.google.com/maps/api/staticmap?center="+img_center+"&zoom=15&size=512x512&markers=color:blue|label:S|"+marker1+"&markers=color:red|label:E|"+marker2
+            console.log(element.image_url)
             element.title = suggestion.routeName
             var utcOffset = moment.parseZone(suggestion.srcArrivalTime.actual).utcOffset();
             element.subtitle = "Board at " + suggestion.closestToSrcName + " at " + moment.utc(suggestion.srcArrivalTime.actual).utcOffset(utcOffset).format("HH:mm") + " and get off at " + suggestion.closestToDestName
