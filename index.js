@@ -106,7 +106,7 @@ function sendTextMessage(sender, text, suggestions) {
 
         request({
             url: 'https://graph.facebook.com/v2.6/me/messages',
-            qs: {access_token:token},
+            qs: {access_token:RIDE_NOW_FB_TOKEN},
             method: 'POST',
             json: {
                 recipient: {id:sender},
@@ -123,7 +123,7 @@ function sendTextMessage(sender, text, suggestions) {
     }else{
         request({
             url: 'https://graph.facebook.com/v2.6/me/messages',
-            qs: {access_token:token},
+            qs: {access_token:RIDE_NOW_FB_TOKEN},
             method: 'POST',
             json: {
                 recipient: {id:sender},
