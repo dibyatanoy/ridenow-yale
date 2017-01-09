@@ -924,7 +924,13 @@ function getStopArrivalTimes(sender, src, dest){
                 suggestion.closestToDestName = stopNames[suggestion.closestToDest].name
             })
 
-            sendTextMessage(sender, "This is what I found: ", routesAndClosestStopsWithArrivals, true)
+            var text
+            if (routesAndClosestStopsWithArrivals.length == 0){
+                text = "Sorry, I could not find any suitable bus routes at this time."
+            }else{
+                text = "This is what I found: "
+            }
+            sendTextMessage(sender, text, routesAndClosestStopsWithArrivals, true)
             
         }
     })
