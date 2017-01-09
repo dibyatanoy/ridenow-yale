@@ -617,7 +617,7 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
         } else if (response.body.error) {
             console.log('Error: ', response.body.error)
         }else{
-            console.log(srcWalkTimes)
+            console.log(body)
             var srcWalkTimes = body.time
             for (var i = 0; i < numStops; i++){
                 stopDistancesSrc[stopDescs[i].stop_id] = srcWalkTimes[i+1]
