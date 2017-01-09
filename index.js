@@ -264,7 +264,7 @@ function sendTextMessage(sender, text, context, suggestions, isSuggestion) {
         })
 
     }else{
-        let messageData = { text:text }
+        var messageData = { text:text }
         if (isSuggestion){
             messageData.text = "Sorry, I could not find any suitable bus routes at this time."
         }
