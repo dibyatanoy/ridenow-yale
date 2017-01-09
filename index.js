@@ -149,7 +149,7 @@ app.post('/webhook/', function (req, res) {
     res.sendStatus(200)
 })
 
-function sendMessageWithActions(sender, text, context, suggestions){
+function sendMessageWithActions(sender, text, context, suggestions, isSuggestion){
 
 
     if ('typingOn' in context){
@@ -170,7 +170,7 @@ function sendMessageWithActions(sender, text, context, suggestions){
             } else if (response.body.error) {
                 console.log('Error: ', response.body.error)
             }else{
-                sendTextMessage(sender, text, context, suggestions)
+                sendTextMessage(sender, text, context, suggestions, isSuggestion)
             }
         })
     }else{
@@ -211,12 +211,12 @@ function sendMessageWithActions(sender, text, context, suggestions){
                 }
             })
         }else{
-            sendTextMessage(sender, text, context, suggestions)
+            sendTextMessage(sender, text, context, suggestions, isSuggestion)
         }
     }
 }
 
-function sendTextMessage(sender, text, context, suggestions) {
+function sendTextMessage(sender, text, context, suggestions, isSuggestion) {
     if (suggestions && suggestions.length > 0){
 
         var elements = []
@@ -265,7 +265,7 @@ function sendTextMessage(sender, text, context, suggestions) {
 
     }else{
         let messageData = { text:text }
-        if (suggestions && suggestions.length == 0){
+        if (isSuggestion){
             messageData.text = "Sorry, I could not find any suitable bus routes at this time."
         }
         request({
@@ -924,7 +924,7 @@ function getStopArrivalTimes(sender, src, dest){
                 suggestion.closestToDestName = stopNames[suggestion.closestToDest].name
             })
 
-            sendTextMessage(sender, "This is what I found: ", routesAndClosestStopsWithArrivals)
+            sendTextMessage(sender, "This is what I found: ", routesAndClosestStopsWithArrivals, true)
             
         }
     })
@@ -1038,7 +1038,7 @@ const actions = {
             // Yay, we found our recipient!
             // Let's forward our bot response to her.
             // We return a promise to let our bot know when we're done sending
-            return sendMessageWithActions(recipientId, text, context, null)
+            return sendMessageWithActions(recipientId, text, context, null, false)
             //return sendTextMessage(recipientId, text, context)
             
         } else {
