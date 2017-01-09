@@ -149,6 +149,24 @@ app.post('/webhook/', function (req, res) {
     res.sendStatus(200)
 })
 
+function getDistanceFromLatLonInM(lat1,lon1,lat2,lon2) {
+    var R = 6371000; // Radius of the earth in m
+    var dLat = deg2rad(lat2-lat1);  // deg2rad below
+    var dLon = deg2rad(lon2-lon1); 
+    var a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2)
+        ; 
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var d = R * c; // Distance in km
+    return d;
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI/180)
+}
+
 function sendMessageWithActions(sender, text, context, suggestions, isSuggestion){
 
 
@@ -591,7 +609,7 @@ function downloadStopDescsAndContinue(sender, agency, routes, src, dest){
 //var stopDistancesSrc = {}
 //var stopDistancesDest = {}
 
-function cacheStopDistancesAndContinue(sender, routes, src, dest){
+function cacheStopDistancesAndContinue1(sender, routes, src, dest){
 
     var numStops = stopDescs.length
     var srcStopList = []
@@ -657,6 +675,19 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
 
         }
     })
+}
+
+function cacheStopDistancesAndContinue(sender, routes, src, dest){
+    var numStops = stopDescs.length
+
+    for (var i = 0; i < numStops; i++){
+        var currLoc = stopDescs[i].location
+        stopDistancesSrc[stopDescs[i].stop_id] = getDistanceFromLatLonInM(src.lat, src.lng, currLoc.lat, currLoc.lng)
+        stopDistancesDest[stopDescs[i].stop_id] = getDistanceFromLatLonInM(dest.lat, dest.lng, currLoc.lat, currLoc.lng)
+    }
+
+    console.log('completed caching destination to stop distances')
+    getClosestStopsAllRoutes(sender, routes, src, dest)
 }
 
 function cacheStopDistancesAndContinue2(sender, routes, src, dest){
