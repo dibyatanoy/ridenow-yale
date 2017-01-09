@@ -588,7 +588,7 @@ function downloadStopDescsAndContinue(sender, agency, routes, src, dest){
 //var stopDistancesSrc = {}
 //var stopDistancesDest = {}
 
-function cacheStopDistancesAndContinue(sender, routes, src, dest){
+function cacheStopDistancesAndContinue2(sender, routes, src, dest){
 
     var numStops = stopDescs.length
     var srcStopList = []
@@ -652,6 +652,52 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
                 }
             })
 
+        }
+    })
+}
+
+function cacheStopDistancesAndContinue(sender, routes, src, dest){
+
+    var numStops = stopDescs.length
+    var originList = src.lat.toString() + ',' + src.lng.toString() + "|" + dest.lat.toString() + ',' + dest.lng.toString()
+    var destList = dest.lat.toString() + ',' + dest.lng.toString()
+    //srcStopList.push(src.lat.toString() + ',' + src.lng.toString())
+    //destStopList.push(dest.lat.toString() + ',' + dest.lng.toString())
+
+    for (var i = 0; i < numStops; i++){
+        var currLoc = stopDescs[i].location
+        destList += "|" + currLoc.lat.toString() + ',' + currLoc.lng.toString()
+    }
+
+    request({
+        url: "http://maps.googleapis.com/maps/api/distancematrix/json",
+        qs: {
+            origins: originList,
+            destinations: destList,
+            key: gmapToken,
+            mode: 'walking',
+        },
+        method: 'GET',
+    }, function(error, response, body){
+        if (error) {
+            console.log('Error getting distances: ', error)
+        } else if (response.body.error) {
+            console.log('Error: ', response.body.error)
+        }else if(JSON.parse(body).status != "OK"){
+            console.log('Error in status: ', JSON.parse(body).status)
+        }else{
+            var rows = JSON.parse(body).rows
+
+            // calc src walktimes
+
+            for (var i = 0; i < numStops; i++){
+                stopDistancesSrc[stopDescs[i].stop_id] = rows[0].elements[i+1].duration.value
+                stopDistancesDest[stopDescs[i].stop_id] = rows[1].elements[i+1].duration.value
+            }
+
+            console.log(stopDistancesSrc)
+            console.log("completed caching stop distances")
+            getClosestStopsAllRoutes(sender, routes, src, dest)
         }
     })
 }
@@ -901,7 +947,7 @@ function geocodeDestination(context, entities, resolve, reject){
 
         // try to geocode
         request({
-        url: 'https://maps.googleapis.com/maps/api/geocode/json',
+            url: 'https://maps.googleapis.com/maps/api/geocode/json',
             qs: {
                 address: location,
                 key: gmapToken,
