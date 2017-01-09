@@ -930,7 +930,7 @@ function getStopArrivalTimes(sender, src, dest){
             }else{
                 text = "This is what I found: "
             }
-            sendTextMessage(sender, text, routesAndClosestStopsWithArrivals, true)
+            sendTextMessage(sender, text, null, routesAndClosestStopsWithArrivals, true)
             
         }
     })
