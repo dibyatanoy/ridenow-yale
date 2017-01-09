@@ -136,7 +136,7 @@ app.post('/webhook/', function (req, res) {
 
             wit.runActions(
                 sessionId,
-                text,
+                "",
                 sessions[sessionId].context
             ).then((context) => {
                 sessions[sessionId].context = context
