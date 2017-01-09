@@ -264,10 +264,10 @@ function sendTextMessage(sender, text, context, suggestions) {
         })
 
     }else{
-        if (suggestions && suggestions.length == 0){
-            text = "Sorry, I could not find any suitable bus routes at this time."
-        }
         let messageData = { text:text }
+        if (suggestions && suggestions.length == 0){
+            messageData.text = "Sorry, I could not find any suitable bus routes at this time."
+        }
         request({
             url: 'https://graph.facebook.com/v2.6/me/messages',
             qs: {access_token:fbToken},
