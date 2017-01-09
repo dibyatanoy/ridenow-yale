@@ -926,7 +926,7 @@ function geocodeDestination(context, entities, resolve, reject){
             sessions[context.sessionId].context = context
             var src = {lat: context.srcLat, lng: context.srcLng}
             var dest = {lat: context.destLat, lng: context.destLng}
-            downloadRoutesAndContinue(sender, 'yale', src, dest)
+            downloadRoutesAndContinue(context.sender, 'yale', src, dest)
             return resolve(context)
         })
 
@@ -979,6 +979,8 @@ const wit = new Wit({
   actions,
   logger: new log.Logger(log.INFO)
 });
+
+
 
 
 // getting static map images eg: http://maps.googleapis.com/maps/api/staticmap?size=764x400&center=41.3084858,-72.92825460000002&zoom=17&markers=41.3084858,-72.92825460000002
