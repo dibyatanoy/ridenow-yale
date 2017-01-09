@@ -668,12 +668,12 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
         var currLoc = stopDescs[i].location
         destList += "|" + currLoc.lat.toString() + ',' + currLoc.lng.toString()
     }
-
+    console.log(originList)
     request({
         url: "https://maps.googleapis.com/maps/api/distancematrix/json",
         qs: {
-            origins: encodeURIComponent(originList),
-            destinations: encodeURIComponent(destList),
+            origins: originList,
+            destinations: destList,
             key: gmapToken,
             mode: 'walking',
         },
