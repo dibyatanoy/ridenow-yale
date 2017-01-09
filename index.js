@@ -670,7 +670,7 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
     }
 
     request({
-        url: "http://maps.googleapis.com/maps/api/distancematrix/json",
+        url: "https://maps.googleapis.com/maps/api/distancematrix/json",
         qs: {
             origins: encodeURIComponent(originList),
             destinations: encodeURIComponent(destList),
