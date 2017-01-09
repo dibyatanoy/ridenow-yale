@@ -688,7 +688,9 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
             console.log(body)
         }else{
             var rows = JSON.parse(body).rows
-
+            console.log(rows[0].elements.length)
+            console.log(rows[1].elements.length)
+            console.log(numStops)
             // calc src walktimes
 
             for (var i = 0; i < numStops; i++){
