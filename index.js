@@ -672,8 +672,8 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
     request({
         url: "http://maps.googleapis.com/maps/api/distancematrix/json",
         qs: {
-            origins: originList,
-            destinations: destList,
+            origins: encodeURIComponent(originList),
+            destinations: encodeURIComponent(destList),
             key: gmapToken,
             mode: 'walking',
         },
@@ -685,6 +685,7 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
             console.log('Error: ', response.body.error)
         }else if(JSON.parse(body).status != "OK"){
             console.log('Error in status: ', JSON.parse(body).status)
+            console.log(body)
         }else{
             var rows = JSON.parse(body).rows
 
