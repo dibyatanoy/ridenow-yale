@@ -217,7 +217,7 @@ function sendMessageWithActions(sender, text, context, suggestions){
 }
 
 function sendTextMessage(sender, text, context, suggestions) {
-    if (suggestions){
+    if (suggestions && suggestions.length > 0){
 
         var elements = []
 
@@ -264,6 +264,9 @@ function sendTextMessage(sender, text, context, suggestions) {
         })
 
     }else{
+        if (suggestions.length == 0){
+            text = "Sorry, I could not find any suitable bus routes at this time."
+        }
         let messageData = { text:text }
         request({
             url: 'https://graph.facebook.com/v2.6/me/messages',
@@ -588,7 +591,7 @@ function downloadStopDescsAndContinue(sender, agency, routes, src, dest){
 //var stopDistancesSrc = {}
 //var stopDistancesDest = {}
 
-function cacheStopDistancesAndContinue2(sender, routes, src, dest){
+function cacheStopDistancesAndContinue(sender, routes, src, dest){
 
     var numStops = stopDescs.length
     var srcStopList = []
@@ -656,10 +659,10 @@ function cacheStopDistancesAndContinue2(sender, routes, src, dest){
     })
 }
 
-function cacheStopDistancesAndContinue(sender, routes, src, dest){
+function cacheStopDistancesAndContinue2(sender, routes, src, dest){
 
     var numStops = stopDescs.length
-    var originList = src.lat.toString() + ',' + src.lng.toString() + "|" + dest.lat.toString() + ',' + dest.lng.toString()
+    var originList = src.lat.toString() + ',' + src.lng.toString()
     var destList = dest.lat.toString() + ',' + dest.lng.toString()
     //srcStopList.push(src.lat.toString() + ',' + src.lng.toString())
     //destStopList.push(dest.lat.toString() + ',' + dest.lng.toString())
@@ -693,12 +696,50 @@ function cacheStopDistancesAndContinue(sender, routes, src, dest){
 
             for (var i = 0; i < numStops; i++){
                 stopDistancesSrc[stopDescs[i].stop_id] = rows[0].elements[i+1].duration.value
-                stopDistancesDest[stopDescs[i].stop_id] = rows[1].elements[i+1].duration.value
+                //stopDistancesDest[stopDescs[i].stop_id] = rows[1].elements[i+1].duration.value
             }
 
             console.log(stopDistancesSrc)
             console.log("completed caching stop distances")
-            getClosestStopsAllRoutes(sender, routes, src, dest)
+
+            originList = dest.lat.toString() + ',' + dest.lng.toString()
+
+            request({
+                url: "https://maps.googleapis.com/maps/api/distancematrix/json",
+                qs: {
+                    origins: originList,
+                    destinations: destList,
+                    key: gmapToken,
+                    mode: 'walking',
+                },
+                method: 'GET',
+            }, function(error, response, body){
+                if (error) {
+                    console.log('Error getting distances: ', error)
+                } else if (response.body.error) {
+                    console.log('Error: ', response.body.error)
+                }else if(JSON.parse(body).status != "OK"){
+                    console.log('Error in status: ', JSON.parse(body).status)
+                    console.log(body)
+                }else{
+                    var rows = JSON.parse(body).rows
+                    console.log(body)
+                    // calc src walktimes
+
+                    for (var i = 0; i < numStops; i++){
+                        stopDistancesSrc[stopDescs[i].stop_id] = rows[0].elements[i+1].duration.value
+                        //stopDistancesDest[stopDescs[i].stop_id] = rows[1].elements[i+1].duration.value
+                    }
+
+                    console.log(stopDistancesSrc)
+                    console.log("completed caching stop distances")
+
+                    originList = dest.lat.toString() + ',' + dest.lng.toString()
+
+                    
+                    getClosestStopsAllRoutes(sender, routes, src, dest)
+                }
+            })
         }
     })
 }
@@ -856,33 +897,34 @@ function getStopArrivalTimes(sender, src, dest){
                         routesAndClosestStopsWithArrivals.push(newEntry2)
                     }
 
-                    routesAndClosestStopsWithArrivals.sort(function(a, b){
-
-                        // if one is in the correct direction and the other isn't, take the first
-                        if (a.direction != b.direction){
-                            if (a.direction == 0) 
-                                return -1
-                            else
-                                return 1
-                        }
-                        //if stops within 20s of each other, sort by arrival times
-                        if (Math.abs(a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest) < 20){
-                            return (a.srcArrivalTime.msec - b.srcArrivalTime.msec)
-                        }
-                        return (a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest)
-                    })
-
-                    console.log('Completed')
-                    routesAndClosestStopsWithArrivals.forEach(function(suggestion){
-
-                        suggestion.closestToSrcName = stopNames[suggestion.closestToSrc].name
-                        suggestion.closestToDestName = stopNames[suggestion.closestToDest].name
-                    })
-
-                    sendTextMessage(sender, "This is what I found: ", routesAndClosestStopsWithArrivals)
                     //console.log(routesAndClosestStopsWithArrivals)
                 }
             })
+
+            routesAndClosestStopsWithArrivals.sort(function(a, b){
+
+                // if one is in the correct direction and the other isn't, take the first
+                if (a.direction != b.direction){
+                    if (a.direction == 0) 
+                        return -1
+                    else
+                        return 1
+                }
+                //if stops within 20s of each other, sort by arrival times
+                if (Math.abs(a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest) < 20){
+                    return (a.srcArrivalTime.msec - b.srcArrivalTime.msec)
+                }
+                return (a.minDistSrc + a.minDistDest - b.minDistSrc - b.minDistDest)
+            })
+
+            console.log('Completed')
+            routesAndClosestStopsWithArrivals.forEach(function(suggestion){
+
+                suggestion.closestToSrcName = stopNames[suggestion.closestToSrc].name
+                suggestion.closestToDestName = stopNames[suggestion.closestToDest].name
+            })
+
+            sendTextMessage(sender, "This is what I found: ", routesAndClosestStopsWithArrivals)
             
         }
     })
