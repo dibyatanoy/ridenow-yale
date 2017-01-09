@@ -930,6 +930,10 @@ function getStopArrivalTimes(sender, src, dest){
             }else{
                 text = "This is what I found: "
             }
+
+            if(routesAndClosestStopsWithArrivals.length > 5){
+                routesAndClosestStopsWithArrivals = routesAndClosestStopsWithArrivals.splice(0, 5)
+            }
             sendTextMessage(sender, text, null, routesAndClosestStopsWithArrivals, true)
             
         }
