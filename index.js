@@ -926,7 +926,8 @@ function geocodeDestination(context, entities, resolve, reject){
             sessions[context.sessionId].context = context
             var src = {lat: context.srcLat, lng: context.srcLng}
             var dest = {lat: context.destLat, lng: context.destLng}
-            downloadRoutesAndContinue(context.sender, 'yale', src, dest)
+            //downloadRoutesAndContinue(context.sender, 'yale', src, dest)
+            downloadRoutesAndContinue(context.sender, 'yale', {lat: 41.3102168, lng: -72.93068079999999}, dest)
             return resolve(context)
         })
 
