@@ -934,6 +934,7 @@ function getStopArrivalTimes(sender, src, dest){
             if(routesAndClosestStopsWithArrivals.length > 5){
                 routesAndClosestStopsWithArrivals = routesAndClosestStopsWithArrivals.splice(0, 5)
             }
+            console.log(routesAndClosestStopsWithArrivals)
             sendTextMessage(sender, text, null, routesAndClosestStopsWithArrivals, true)
             
         }
