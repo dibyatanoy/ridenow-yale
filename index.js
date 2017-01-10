@@ -12,7 +12,9 @@ const mapquestKey = process.env.RIDE_NOW_MAPQUEST_KEY
 const witToken = process.env.RIDENOW_WIT_TOKEN;
 const yaleAgencyId = '128'
 const walkTimeTolerance = 60 // in seconds
+const avgWalkSpeedMetrePerSec = 1.39
 const geoFilter = '41.3125884,-72.92496140000002|1500'
+const INF = 1000000
 // predetermined: 4097030, 4097062 (both-way!), 4097074, 4128602, 4132142, 4097070, 4143990, 4144014, 4161262
 const upstreamStops = ['4096830', '4096834', '4096838', '4096842', '4096846', '4096850', '4096854', '4096906', '4096926', '4096942', '4096946', '4096966', '4096970', '4096978', '4096982', '4097002', '4097014', '4097030', '4097062', '4097074', '4128602', '4132142', '4143990', '4161262', '']
 const downstreamStops = ['4096870', '4096878', '4096882', '4096886', '4096890', '4096898', '4096902', '4096910', '4096914', '4096922', '4096930', '4096934', '4096938', '4096958', '4096962', '4096974', '4096986', '4096990', '4096994', '4096998', '4097062', '4097070', '4144014', '']
@@ -448,27 +450,87 @@ function getBestStops(route, src, dest, mcb){
     var minDistSrc = 1000000
     var minDistDest = 1000000
 
-    for(var i = 0; i < numStopsOnRoute; i++){
+    var stopsWithSortInfo = []
 
-        if(stops[i] in stopDistancesSrc && stopDistancesSrc[stops[i]] < minDistSrc){
-            minDistSrc = stopDistancesSrc[stops[i]]
-            closestToSrc = stops[i]
-            closestToSrcIdx = i
-        }
+    var validStops = upstreamStops
+    if ((dest.lat - src.lat) < 0.0){
+        validStops = downstreamStops
     }
 
-    for(var i = 0; i < numStopsOnRoute; i++){
+    stops.forEach(function(stop){
+        var stopWithSortInfo = {stopid: stop, dir: null, srcDist: INF, destDist: INF}
+        if (stop in validStops)
+            stopWithSortInfo.dir = 0
+        else
+            stopWithSortInfo.dir = 1
 
-        if(stops[i] in stopDistancesDest && stopDistancesDest[stops[i]] < minDistDest && i != closestToSrcIdx){
-            minDistDest = stopDistancesDest[stops[i]]
-            closestToDest = stops[i]
+        if (stop in stopDistancesSrc)
+            stopWithSortInfo.srcDist = stopDistancesSrc[stop]
+        if (stop in stopDistancesDest)
+            stopWithSortInfo.destDist = stopDistancesDest[stop]
+
+        stopsWithSortInfo.push(stopWithSortInfo)
+    })
+
+    stopsWithSortInfo.sort(function(a, b){
+        // if walk distances between avgWalkSpeed * waklTimeTolerance, compare directions
+        // else use walk distances alone to sort
+
+        if (Math.abs(a.srcDist - b.srcDist) < avgWalkSpeedMetrePerSec * walkTimeTolerance){
+            if (a.dir == b.dir) 
+                return (a.srcDist - b.srcDist)
+            else
+                return (a.dir - b.dir)
+        }else{
+            return (a.srcDist - b.srcDist)
         }
+    })
+
+    if (stopsWithSortInfo.length > 0){
+        closestStopInfo.closestToSrc = stopsWithSortInfo[0].stopid
+        closestStopInfo.minDistSrc = stopsWithSortInfo[0].srcDist
     }
 
-    closestStopInfo.closestToSrc = closestToSrc
-    closestStopInfo.closestToDest = closestToDest
-    closestStopInfo.minDistSrc = minDistSrc
-    closestStopInfo.minDistDest = minDistDest
+    stopsWithSortInfo.sort(function(a, b){
+        // if walk distances between avgWalkSpeed * waklTimeTolerance, compare directions
+        // else use walk distances alone to sort
+
+        if (Math.abs(a.destDist - b.destDist) < avgWalkSpeedMetrePerSec * walkTimeTolerance){
+            if (a.dir == b.dir) 
+                return (a.destDist - b.destDist)
+            else
+                return (a.dir - b.dir)
+        }else{
+            return (a.destDist - b.destDist)
+        }
+    })
+
+    if (stopsWithSortInfo.length > 0){
+        closestStopInfo.closestToDest = stopsWithSortInfo[0].stopid
+        closestStopInfo.minDistDest = stopsWithSortInfo[0].destDist
+    }
+
+    // for(var i = 0; i < numStopsOnRoute; i++){
+
+    //     if(stops[i] in stopDistancesSrc && stopDistancesSrc[stops[i]] < minDistSrc){
+    //         minDistSrc = stopDistancesSrc[stops[i]]
+    //         closestToSrc = stops[i]
+    //         closestToSrcIdx = i
+    //     }
+    // }
+
+    // for(var i = 0; i < numStopsOnRoute; i++){
+
+    //     if(stops[i] in stopDistancesDest && stopDistancesDest[stops[i]] < minDistDest && i != closestToSrcIdx){
+    //         minDistDest = stopDistancesDest[stops[i]]
+    //         closestToDest = stops[i]
+    //     }
+    // }
+
+    // closestStopInfo.closestToSrc = closestToSrc
+    // closestStopInfo.closestToDest = closestToDest
+    // closestStopInfo.minDistSrc = minDistSrc
+    // closestStopInfo.minDistDest = minDistDest
 
     routesAndClosestStops.push(closestStopInfo)
 
@@ -1069,10 +1131,13 @@ function geocodeDestination(context, entities, resolve, reject){
             }
             
             sessions[context.sessionId].context = context
-            var src = {lat: context.srcLat, lng: context.srcLng}
-            var dest = {lat: context.destLat, lng: context.destLng}
-            //downloadRoutesAndContinue(context.sender, 'yale', src, dest)
-            downloadRoutesAndContinue(context.sender, 'yale', {lat: 41.3102168, lng: -72.93068079999999}, dest)
+            
+            if('validDest' in context){
+                var src = {lat: context.srcLat, lng: context.srcLng}
+                var dest = {lat: context.destLat, lng: context.destLng}
+                //downloadRoutesAndContinue(context.sender, 'yale', src, dest)
+                downloadRoutesAndContinue(context.sender, 'yale', {lat: 41.3102168, lng: -72.93068079999999}, dest)
+            }
             return resolve(context)
         })
 
