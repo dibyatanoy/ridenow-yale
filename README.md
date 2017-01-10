@@ -1,6 +1,6 @@
 #RideNow - Yale
 
-RideNow - Yale is a messenger bot that can help you find your way around the Yale campus using Yale's very own transit system.
+[RideNow - Yale](https://www.facebook.com/RideNow-Yale-237869409987115/) is a messenger bot that can help you find your way around the Yale campus using Yale's very own transit system.
 
 The bot simplifies the usual process of picking a bus route using the TransLoc Rider app, and makes smart suggestions on which routes you could take to get to your destination from your current location.
 
