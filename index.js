@@ -459,7 +459,7 @@ function getBestStops(route, src, dest, mcb){
 
     stops.forEach(function(stop){
         var stopWithSortInfo = {stopid: stop, dir: null, srcDist: INF, destDist: INF}
-        if (stop in validStops)
+        if (validStops.indexOf(stop) != -1)
             stopWithSortInfo.dir = 0
         else
             stopWithSortInfo.dir = 1
