@@ -17,4 +17,4 @@ The bot is written using Node.js and uses wit.ai for the Natural Language suppor
 
 The bot can only suggest routes if you are somewhere within or close to the Yale campus. West Campus bus routes are not supported yet.
 
-<sub><sup>The bot does not, by any means, guarantee the viability of the routes it suggests, neither is it or its developers responsible for the safety of the user(s). Please use your judgement when choosing a route suggested by the bot.</sup></sub>
+<sub>The bot does not, by any means, guarantee the viability of the routes it suggests, neither is it or its developers responsible for the safety of the user(s). Please use your judgement when choosing a route suggested by the bot.</sub>
