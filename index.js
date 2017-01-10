@@ -94,6 +94,11 @@ app.post('/webhook/', function (req, res) {
                 text,
                 sessions[sessionId].context
             ).then((context) => {
+                delete context.hasAttachment
+                delete context.lacksAttachment
+                delete context.cancelflow
+                delete context.validDest
+                delete context.invalidDest
                 sessions[sessionId].context = context
             })
             .catch((err) => {
@@ -139,7 +144,7 @@ app.post('/webhook/', function (req, res) {
                 "",
                 sessions[sessionId].context
             ).then((context) => {
-                sessions[sessionId].context = {}
+                sessions[sessionId].context = context
             })
             .catch((err) => {
                 console.error('Oops! Got an error from Wit: ', err.stack || err);
