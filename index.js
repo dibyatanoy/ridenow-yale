@@ -472,7 +472,7 @@ function getBestStops(route, src, dest, mcb){
         stopsWithSortInfo.push(stopWithSortInfo)
 
         //test code
-        if(stop == "4143990" || stop == "4096882"){
+        if(stop == "4096906" || stop == "4096882"){
             console.log(stop, stopWithSortInfo.dir, stopWithSortInfo.srcDist, stopWithSortInfo.destDist)
         }
     })
