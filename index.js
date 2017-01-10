@@ -1050,12 +1050,21 @@ function geocodeDestination(context, entities, resolve, reject){
                 console.log('Error: ', response.body.error)
             }else{
 
-                delete context.invalidDest
-                context.validDest = true
-                context.destLat = JSON.parse(body).results[0].geometry.location.lat
-                context.destLng = JSON.parse(body).results[0].geometry.location.lng
+                try{
+                    context.destLat = JSON.parse(body).results[0].geometry.location.lat
+                    context.destLng = JSON.parse(body).results[0].geometry.location.lng
+
+                    delete context.invalidDest
+                    context.validDest = true
+                }catch(err){
+
+                    console.log(body)
+                    delete context.validDest
+                    context.invalidDest = true
+                }
+                
                 //console.log('lat: %f, long: %f', JSON.parse(body).results[0].geometry.location.lat, JSON.parse(body).results[0].geometry.location.lng)
-                console.log(body)
+                
                 //console.log(response.body)
             }
             
