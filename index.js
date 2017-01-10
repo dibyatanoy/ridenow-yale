@@ -139,7 +139,7 @@ app.post('/webhook/', function (req, res) {
                 "",
                 sessions[sessionId].context
             ).then((context) => {
-                sessions[sessionId].context = context
+                sessions[sessionId].context = {}
             })
             .catch((err) => {
                 console.error('Oops! Got an error from Wit: ', err.stack || err);
