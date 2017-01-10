@@ -470,6 +470,11 @@ function getBestStops(route, src, dest, mcb){
             stopWithSortInfo.destDist = stopDistancesDest[stop]
 
         stopsWithSortInfo.push(stopWithSortInfo)
+
+        //test code
+        if(stop == "4143990" || stop == "4096882"){
+            console.log(stop, stopWithSortInfo.dir, stopWithSortInfo.srcDist, stopWithSortInfo.destDist)
+        }
     })
 
     stopsWithSortInfo.sort(function(a, b){
@@ -494,7 +499,6 @@ function getBestStops(route, src, dest, mcb){
     stopsWithSortInfo.sort(function(a, b){
         // if walk distances between avgWalkSpeed * waklTimeTolerance, compare directions
         // else use walk distances alone to sort
-
         if (Math.abs(a.destDist - b.destDist) < avgWalkSpeedMetrePerSec * walkTimeTolerance){
             if (a.dir == b.dir) 
                 return (a.destDist - b.destDist)
